@@ -1,0 +1,52 @@
+# This is the Docker Compose file for the local testbed setup for Jenkins CI
+services:
+  # the docker-in-docker service for Jenkins
+  jenkins-dind:
+    # use the standard image from docker repository
+    image: 'docker:dind' 
+    networks:
+      jenkins:
+      # Add network alias for reachability with the other service
+        aliases:
+          - docker
+    volumes:
+      - jenkins-docker-certs:/certs/client
+      - jenkins-data:/var/jenkins_home
+    environment:
+      DOCKER_TLS_CERTDIR: /certs
+    # privileged container - since it uses host networking
+    privileged: true
+    # expose the ports needed
+    ports:
+      - '2376:2376'
+
+  # the Jenkins service with blueocean plugin
+  jenkins-blueocean:
+    # use the custom image from Dockerfile.jenkins
+    build:
+      context: .
+      dockerfile: Dockerfile.jenkins
+    # the Jenkins service depends on the d-in-d service
+    depends_on:
+      - jenkins-dind
+    networks:
+      - 'jenkins'
+    volumes:
+      - jenkins-docker-certs:/certs/client:ro
+      - jenkins-data:/var/jenkins_home
+    environment:
+      DOCKER_HOST: tcp://docker:2376
+      DOCKER_CERT_PATH: /certs/client
+      DOCKER_TLS_VERIFY: 1
+    ports:
+      - '8080:8080'
+      - '50000:50000'
+networks:
+  # the 'jenkins' network to be used for communication between all
+  # things 'jenkins'
+  jenkins:
+
+# volumes in use by the CI infrastructure
+volumes:
+  jenkins-docker-certs:
+  jenkins-data:

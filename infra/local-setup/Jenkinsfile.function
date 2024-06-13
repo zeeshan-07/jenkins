@@ -1,0 +1,37 @@
+pipeline {
+    agent none
+    stages{
+        
+        stage ("Build"){
+            agent{
+                label 'app-server'
+            }
+            steps{
+                dir('/shared/dev/gsm-umts-whitelisting/app/test') {
+                    sh 'source /etc/profile; make'
+                    stash (name: 'app-binary', includes:'l2fwd')
+                }
+            }
+            
+        }
+        stage("Functional-test"){
+            agent{
+                label 'app-server'
+            }
+            steps {
+                dir('/shared/dev/gsm-umts-whitelisting/app/test') {
+                    unstash(name: 'app-binary')
+                    sh 'sudo ./l2fwd | tee app.log'
+                }
+        
+            }
+            post {
+                always {
+                    dir('/shared/dev/gsm-umts-whitelisting/app/test'){
+                        archiveArtifacts 'app.log'
+                    }
+                }
+            }
+        }
+    }
+}

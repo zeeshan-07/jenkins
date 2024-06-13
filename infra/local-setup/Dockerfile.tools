@@ -1,0 +1,5 @@
+FROM golang:1.17.2-alpine3.14
+RUN go install golang.org/x/lint/golint@latest
+RUN apk update
+RUN apk add ruby ruby-etc
+RUN gem install mdl

@@ -1,0 +1,28 @@
+# This is the Dockerfile for the Jenkins image in use for this project CI
+FROM jenkins/jenkins:2.303.1-jdk11
+USER root
+
+# Packages needed to setup an HTTPS based repo
+RUN apt-get update && apt-get install -y apt-transport-https \
+    ca-certificates curl gnupg2 \
+    software-properties-common
+
+# Get the Docker repo GPG key and add it
+RUN curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
+
+# Add the key fingerprint in APT
+RUN apt-key fingerprint 0EBFCD88
+
+# Add the docker repository
+RUN add-apt-repository \
+    "deb [arch=amd64] https://download.docker.com/linux/debian \
+    $(lsb_release -cs) stable"
+
+# Update the package list and install the package
+RUN apt-get update && apt-get install -y docker-ce-cli
+
+# Switch to user 'jenkins' for plugin management
+USER jenkins
+
+# Add the required pluging to the Jenkins image
+RUN jenkins-plugin-cli --plugins "blueocean:1.25.0 docker-workflow:1.26"

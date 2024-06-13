@@ -1,0 +1,27 @@
+//Main pipeline of the project CI
+pipeline{
+    // Agents will be stage specific
+    agent none
+    stages{
+        stage("Style Checks"){
+            agent {
+                dockerfile{
+                    filename 'Dockerfile.tools'
+                    dir './infra/local-setup/'
+                    label 'docker-node'
+                }
+            }
+            steps{
+                // Move all of this in a custom alpine image Dockerfile
+                sh 'mdl . | tee md-lint.log'
+                sh 'golint ./... | tee go-lint.log'
+                sh 'gofmt -d . | tee go-fmt.log'
+            }
+            post{
+                always {
+                    archiveArtifacts "md-lint.log, go-lint.log, go-fmt.log"
+                }
+            }
+        }
+    }
+}
